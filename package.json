@@ -1,0 +1,24 @@
+{
+  "name": "step-pipeline",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Type-safe pipeline framework for composing LLM + script steps into reproducible workflows",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./callers/claude-cli": "./dist/callers/claude-cli.js",
+    "./callers/claude-stream": "./dist/callers/claude-stream.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}
