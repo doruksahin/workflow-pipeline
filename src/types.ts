@@ -27,7 +27,7 @@ export interface LlmCallerResult {
   stderr: string
 }
 
-export type LlmCaller = (prompt: string, label: string) => Promise<LlmCallerResult>
+export type LlmCaller = (prompt: string, label: string, ctx?: PipelineContext) => Promise<LlmCallerResult>
 
 // ── Retry ────────────────────────────────────────────────────────────────────
 
@@ -82,6 +82,10 @@ export interface PipelineContext<TLogger = unknown> {
   saveFixtures: boolean
   /** Logger — consumers bring their own type. */
   logger: TLogger
+  /** Event emitter — injected by the runner so steps can emit tool:start/tool:done events. */
+  onEvent?: (event: PipelineEvent) => void
+  /** Current step name — set by the runner before each step.execute(). */
+  currentStep?: string
 }
 
 // ── Step Interface ───────────────────────────────────────────────────────────
@@ -132,6 +136,7 @@ export interface StepDoneEvent {
   step: string
   kind: StepKind
   status: 'ok' | 'error'
+  error?: string
   elapsedMs: number
   timestamp: number
 }
@@ -143,10 +148,81 @@ export interface StepHeartbeatEvent {
   timestamp: number
 }
 
+export interface StepRetryEvent {
+  type: 'step:retry'
+  step: string
+  attempt: number
+  maxAttempts: number
+  errors: string[]
+  delayMs: number
+  timestamp: number
+}
+
+export interface ToolStartEvent {
+  type: 'tool:start'
+  step: string
+  toolId: string
+  toolName: string
+  inputSummary?: string
+  timestamp: number
+}
+
+export interface ToolDoneEvent {
+  type: 'tool:done'
+  step: string
+  toolId: string
+  toolName: string
+  elapsedMs: number
+  outputSummary?: string
+  isError?: boolean
+  timestamp: number
+}
+
+export interface StepTokensEvent {
+  type: 'step:tokens'
+  step: string
+  inputTokens: number
+  outputTokens: number
+  timestamp: number
+}
+
+export interface StepMetaEvent {
+  type: 'step:meta'
+  step: string
+  model: string
+  promptLength: number
+  rawLength: number
+  attempts: number
+  timestamp: number
+}
+
+export interface StepSessionEvent {
+  type: 'step:session'
+  step: string
+  sessionId: string
+  timestamp: number
+}
+
+export interface StepOutputLineEvent {
+  type: 'step:output-line'
+  step: string
+  line: string
+  timestamp: number
+}
+
+export interface FixtureWrittenEvent {
+  type: 'fixture:written'
+  step: string
+  artifact: string
+  path: string
+  timestamp: number
+}
+
 export interface PipelineStartEvent {
   type: 'pipeline:start'
   name: string
   stepCount: number
+  version: number
   timestamp: number
 }
 
@@ -164,6 +240,14 @@ export type PipelineEvent =
   | StepStartEvent
   | StepDoneEvent
   | StepHeartbeatEvent
+  | StepRetryEvent
+  | ToolStartEvent
+  | ToolDoneEvent
+  | StepTokensEvent
+  | StepMetaEvent
+  | StepSessionEvent
+  | StepOutputLineEvent
+  | FixtureWrittenEvent
 
 // ── Pipeline Run Options ────────────────────────────────────────────────────
 
@@ -196,7 +280,7 @@ export const SILENT_LOGGER: PipelineLogger = {
 
 // ── Pipeline Manifest ────────────────────────────────────────────────────────
 
-export type StepKind = 'llm' | 'script' | 'parallel'
+export type StepKind = 'llm' | 'script' | 'parallel' | 'conditional' | 'pipeline'
 export type StepStatus = 'ok' | 'error' | 'skipped'
 
 export interface StepManifestEntry {
@@ -206,6 +290,10 @@ export interface StepManifestEntry {
   elapsedMs: number
   retries: number
   error: string
+  /** For conditional steps: which branch was taken. */
+  branch?: string
+  /** For asStep (pipeline-as-step): nested step entries from child pipeline. */
+  substeps?: StepManifestEntry[]
 }
 
 export interface PipelineManifest {
@@ -261,3 +349,61 @@ export type ParallelSteps<TInput> = Record<string, Step<TInput, unknown>>
  * Used by parallel() to build the named record output type.
  */
 export type StepOutputType<S> = S extends Step<unknown, infer O> ? O : never
+
+// ── Conditional Config ──────────────────────────────────────────────────────
+
+export interface ConditionalConfig<TInput, TOutput> {
+  /** Inspects input and returns a branch key. */
+  router: (input: TInput) => string
+  /** Named branch steps — keys must match router return values. */
+  branches: Record<string, Step<TInput, TOutput>>
+  /** If set, use this branch key when router returns an unknown key. */
+  fallback?: string
+}
+
+/** Step subtype returned by conditional() — exposes branch for manifest enrichment. */
+export interface ConditionalStep<TInput, TOutput> extends Step<TInput, TOutput> {
+  /** Returns the branch key from the last execution (for manifest enrichment). */
+  getLastBranch(): string | undefined
+}
+
+// ── Step Middleware ──────────────────────────────────────────────────────────
+
+export interface StepMiddleware<TInput, TOutput> {
+  /** Transform input before the step executes. */
+  before?: (input: TInput, ctx: PipelineContext) => TInput | Promise<TInput>
+  /** Transform output after a successful step execution. */
+  after?: (output: TOutput, result: StepOk<TOutput>, ctx: PipelineContext) => TOutput | Promise<TOutput>
+  /** Handle errors. Return a StepResult to recover, or undefined to propagate. */
+  onError?: (error: StepError, ctx: PipelineContext) => StepResult<TOutput> | undefined
+}
+
+// ── Pipeline-as-Step (asStep) ──────────────────────────────────────────────
+
+export interface AsStepOptions {
+  /** Subdirectory for child pipeline fixtures (scoped under parent's fixture dir). */
+  fixtureSubdir?: string
+}
+
+/** Step subtype returned by asStep() — exposes substeps for manifest enrichment. */
+export interface PipelineStep<TInput, TOutput> extends Step<TInput, TOutput> {
+  /** Returns substeps from the last execution (for manifest enrichment). */
+  getSubsteps(): StepManifestEntry[] | undefined
+}
+
+// ── Manifest Enrichment ─────────────────────────────────────────────────────
+
+/**
+ * Optional enrichment data that steps can provide for manifest entries.
+ * Used by conditional (branch) and asStep (substeps) steps.
+ * The runner checks for this method — no duck-typing, compiler-verified.
+ */
+export interface StepManifestEnrichment {
+  branch?: string
+  substeps?: StepManifestEntry[]
+}
+
+/** A step that provides extra manifest metadata. Runner detects via this interface. */
+export interface EnrichableStep<TInput, TOutput> extends Step<TInput, TOutput> {
+  getManifestEnrichment(): StepManifestEnrichment
+}

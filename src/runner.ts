@@ -11,6 +11,7 @@ import { resolve } from 'node:path'
 import { writeAftermath } from './aftermath.js'
 import { MANIFEST_FILENAME } from './constants.js'
 import type {
+  EnrichableStep,
   ParallelStepError,
   Pipeline,
   PipelineContext,
@@ -22,6 +23,12 @@ import type {
   StepOutputType,
   StepResult,
 } from './types.js'
+
+// ── Type guard for manifest enrichment ──────────────────────────────────────
+
+function isEnrichable(step: Step<unknown, unknown>): step is EnrichableStep<unknown, unknown> {
+  return 'getManifestEnrichment' in step && typeof (step as Record<string, unknown>).getManifestEnrichment === 'function'
+}
 
 // ── Pipeline Builder ─────────────────────────────────────────────────────────
 
@@ -70,9 +77,12 @@ export class PipelineBuilder<TFirst, TCurrent = TFirst> {
         const pipelineStart = Date.now()
         const startedAt = new Date().toISOString()
         const manifestSteps: StepManifestEntry[] = []
+
+        // Enrich context with event emitter so steps can emit tool:start/tool:done
+        ctx.onEvent = emit
         let current: unknown = input
 
-        emit({ type: 'pipeline:start', name, stepCount: steps.length, timestamp: Date.now() })
+        emit({ type: 'pipeline:start', name, stepCount: steps.length, version: 1, timestamp: Date.now() })
         log.info('Pipeline started', { name, stepCount: steps.length })
 
         // ── Resume: skip steps before resumeFrom ──────────────────────────────
@@ -99,6 +109,7 @@ export class PipelineBuilder<TFirst, TCurrent = TFirst> {
         for (let i = startIndex; i < steps.length; i++) {
           const step = steps[i]
           const stepStart = Date.now()
+          ctx.currentStep = step.name
 
           emit({
             type: 'step:start',
@@ -142,14 +153,23 @@ export class PipelineBuilder<TFirst, TCurrent = TFirst> {
 
           const stepElapsed = Date.now() - stepStart
 
-          manifestSteps.push({
+          const manifestEntry: StepManifestEntry = {
             name: step.name,
             kind: step.kind,
             status: result.status === 'ok' ? 'ok' : 'error',
             elapsedMs: result.elapsedMs,
             retries: result.status === 'error' ? result.retries : 0,
             error: result.status === 'error' ? result.error : '',
-          })
+          }
+
+          // Enrich manifest from conditional/pipeline steps (typed, not duck-typed)
+          if (isEnrichable(step)) {
+            const enrichment = step.getManifestEnrichment()
+            if (enrichment.branch) manifestEntry.branch = enrichment.branch
+            if (enrichment.substeps) manifestEntry.substeps = enrichment.substeps
+          }
+
+          manifestSteps.push(manifestEntry)
 
           if (result.status === 'error') {
             emit({
@@ -157,6 +177,7 @@ export class PipelineBuilder<TFirst, TCurrent = TFirst> {
               step: step.name,
               kind: step.kind,
               status: 'error',
+              error: result.error,
               elapsedMs: stepElapsed,
               timestamp: Date.now(),
             })
@@ -217,6 +238,20 @@ export class PipelineBuilder<TFirst, TCurrent = TFirst> {
             elapsedMs: stepElapsed,
             timestamp: Date.now(),
           })
+
+          // Emit step metadata for LLM steps (model, sizes)
+          if (result.status === 'ok' && result.meta) {
+            emit({
+              type: 'step:meta',
+              step: step.name,
+              model: result.meta.model,
+              promptLength: result.meta.promptLength,
+              rawLength: result.meta.rawLength,
+              attempts: result.meta.attempts,
+              timestamp: Date.now(),
+            })
+          }
+
           log.info('Step completed', { step: step.name, elapsedMs: stepElapsed, status: 'ok' })
 
           current = result.output

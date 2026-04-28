@@ -8,6 +8,13 @@
   },
   "exports": {
     ".": "./dist/index.js",
+    "./cli": {
+      "import": "./dist/cli.js",
+      "types": "./dist/cli.d.ts"
+    },
+    "./conditional": "./dist/conditional.js",
+    "./middleware": "./dist/middleware.js",
+    "./as-step": "./dist/as-step.js",
     "./callers/claude-cli": "./dist/callers/claude-cli.js",
     "./callers/claude-stream": "./dist/callers/claude-stream.js"
   },

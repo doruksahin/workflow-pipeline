@@ -38,6 +38,8 @@ export interface StreamCallerOptions {
   maxBuffer: number
   /** Structured logger for caller lifecycle events. */
   logger: PipelineLogger
+  /** Real-time callback fired when a tool_use block is first encountered. Use () => {} for no-op. */
+  onToolStart: (trace: ToolCallTrace) => void
   /** Real-time callback fired when a tool_result completes a trace. Use () => {} for no-op. */
   onToolCall: (trace: ToolCallTrace) => void
 }
@@ -49,6 +51,7 @@ export const DEFAULT_STREAM_CALLER_OPTIONS: StreamCallerOptions = {
   timeoutMs: DEFAULT_CALLER_TIMEOUT_MS,
   maxBuffer: DEFAULT_CALLER_MAX_BUFFER,
   logger: SILENT_LOGGER,
+  onToolStart() {},
   onToolCall() {},
 }
 
@@ -74,7 +77,7 @@ function callClaudeStream(
   label: string,
   opts: StreamCallerOptions,
 ): Promise<StreamCallerResult> {
-  const { timeoutMs, maxBuffer, logger, onToolCall } = opts
+  const { timeoutMs, maxBuffer, logger, onToolStart, onToolCall } = opts
   const startTime = Date.now()
 
   logger.info('Calling claude -p stream-json', { label, timeoutMs, maxBuffer })
@@ -126,7 +129,7 @@ function callClaudeStream(
           continue
         }
 
-        processMessage(msg, toolCalls, pendingTools, onToolCall, (text) => {
+        processMessage(msg, toolCalls, pendingTools, onToolStart, onToolCall, (text) => {
           finalText = text
         }, (usage) => {
           tokenUsage = usage
@@ -208,24 +211,26 @@ type ContentBlock = ContentBlockToolUse | ContentBlockToolResult | ContentBlockT
 
 /** External NDJSON boundary — optionals are legitimate here (we don't control the format). */
 interface StreamMessage {
-  type: 'assistant' | 'result'
+  type: 'assistant' | 'user' | 'result' | string
   message?: {
     content?: ContentBlock[]
     usage?: { input_tokens?: number; output_tokens?: number }
   }
   result?: string
+  session_id?: string
 }
 
 // ── Message Processor ───────────────────────────────────────────────────────
 
-function processMessage(
+export function processMessage(
   msg: StreamMessage,
   toolCalls: ToolCallTrace[],
   pendingTools: Map<string, { trace: ToolCallTrace; startMs: number }>,
+  onToolStart: (trace: ToolCallTrace) => void,
   onToolCall: (trace: ToolCallTrace) => void,
   setFinalText: (text: string) => void,
   setTokenUsage: (usage: { input: number; output: number }) => void,
-): void {
+): string | undefined {
   // Extract final text from result message
   if (msg.type === 'result') {
     if (typeof msg.result === 'string') {
@@ -244,12 +249,15 @@ function processMessage(
     if (usage?.input_tokens !== undefined && usage?.output_tokens !== undefined) {
       setTokenUsage({ input: usage.input_tokens, output: usage.output_tokens })
     }
-    return
+    return msg.session_id
   }
 
-  // Process content blocks from assistant messages
-  if (msg.type === 'assistant' && msg.message?.content) {
-    for (const block of msg.message.content) {
+  // Process content blocks from assistant and user messages
+  const content = msg.message?.content
+  if (!content) return msg.session_id
+
+  if (msg.type === 'assistant' || msg.type === 'user') {
+    for (const block of content) {
       if (block.type === 'tool_use') {
         const trace: ToolCallTrace = {
           id: block.id,
@@ -260,6 +268,7 @@ function processMessage(
         }
         pendingTools.set(block.id, { trace, startMs: Date.now() })
         toolCalls.push(trace)
+        onToolStart(trace)
       }
 
       if (block.type === 'tool_result') {
@@ -273,4 +282,6 @@ function processMessage(
       }
     }
   }
+
+  return msg.session_id
 }

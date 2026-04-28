@@ -254,6 +254,7 @@ describe('createLlmStep', () => {
     expect(caller).toHaveBeenCalledWith(
       expect.any(String),
       expect.stringContaining('my-custom-label'),
+      expect.anything(),
     )
   })
 

@@ -43,7 +43,7 @@ export function createLlmStep<TInput, TOutput>(config: LlmStepConfig<TInput, TOu
         // 3a. Call LLM
         let raw: string
         try {
-          const result = await caller(prompt, `${label} (attempt ${attempt}/${maxAttempts})`)
+          const result = await caller(prompt, `${label} (attempt ${attempt}/${maxAttempts})`, ctx)
           raw = result.raw
         } catch (err) {
           // LLM call failure is NOT retryable

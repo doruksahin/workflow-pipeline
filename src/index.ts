@@ -23,6 +23,13 @@ export type {
   StepKind,
   StepStatus,
   FixtureValidator,
+  ConditionalConfig,
+  ConditionalStep,
+  StepMiddleware,
+  AsStepOptions,
+  PipelineStep,
+  EnrichableStep,
+  StepManifestEnrichment,
   // Events
   PipelineEvent,
   PipelineStartEvent,
@@ -30,6 +37,11 @@ export type {
   StepStartEvent,
   StepDoneEvent,
   StepHeartbeatEvent,
+  StepRetryEvent,
+  ToolStartEvent,
+  ToolDoneEvent,
+  StepTokensEvent,
+  FixtureWrittenEvent,
   // Run options
   PipelineRunOptions,
   PipelineLogger,
@@ -60,6 +72,11 @@ export {
 // Errors
 export { StepExecutionError, ParseError, PipelineAbortedError, ParallelBranchError } from './errors.js'
 
+// Composition primitives
+export { conditional } from './conditional.js'
+export { withMiddleware } from './middleware.js'
+export { asStep } from './as-step.js'
+
 // Fixtures
 export { writeStepFixture, readStepFixture } from './fixture-writer.js'
 export type { FixtureArtifacts, StepFixtureArtifacts } from './fixture-writer.js'
@@ -71,3 +88,12 @@ export type { AftermathData, AftermathOptions } from './aftermath.js'
 // Compare
 export { diffRuns, renderRunDiff } from './compare.js'
 export type { RunDiff, StepDiff } from './compare.js'
+
+// CLI helpers
+export {
+  createNdjsonEmitter,
+  createNdjsonLogger,
+  createRetryEmitter,
+  createToolEmitters,
+  createNdjsonRunOptions,
+} from './cli.js'
