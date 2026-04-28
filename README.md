@@ -93,19 +93,27 @@ if (result.status === 'ok') {
 - **Run comparison** — Diff two pipeline runs by comparing outputs, timings, and step statuses.
 - **Pluggable callers** — Bring your own LLM client (Claude CLI, streaming, or custom).
 
+## Documentation
+
+| Doc | What it covers |
+|-----|----------------|
+| [Cookbook](docs/cookbook.md) | **Start here.** Turn a `claude -p` script into a pipeline step in 3 minutes. |
+| [Callers Guide](docs/callers.md) | Claude CLI, Claude Stream, and custom LLM callers. |
+| [Primitives](docs/primitives.md) | `conditional()`, `asStep()`, `withMiddleware()` — composition beyond linear chains. |
+| [API Reference](src/pipeline-builder.md) | Full `PipelineBuilder`, `createLlmStep`, `createScriptStep` reference. |
+| [Design Principles](docs/foundations/index.md) | The 7 rules governing the codebase. |
+| [Changelog](CHANGELOG.md) | Version history. |
+
 ## API Overview
 
-See [`src/pipeline-builder.md`](src/pipeline-builder.md) for full API reference.
-
-**Function categories:**
-- **Step creation:** `createLlmStep()`, `createScriptStep()`
-- **Pipeline composition:** `PipelineBuilder`, `parallel()`
-- **Execution:** `.run()`, `PipelineRunOptions`
-- **Fixtures:** `writeStepFixture()`, `readStepFixture()`
-- **Aftermath:** `writeAftermath()`, `parseAftermath()`
-- **Comparison:** `diffRuns()`, `renderRunDiff()`
-- **Errors:** `StepExecutionError`, `ParseError`, `PipelineAbortedError`, `ParallelBranchError`
-- **Callers:** `LlmCaller`, `claude-cli`, `claude-stream`
+**Step creation:** `createLlmStep()`, `createScriptStep()`
+**Pipeline composition:** `PipelineBuilder`, `parallel()`, `conditional()`, `asStep()`, `withMiddleware()`
+**Execution:** `.run()`, `PipelineRunOptions`
+**Fixtures:** `writeStepFixture()`, `readStepFixture()`
+**Aftermath:** `writeAftermath()`, `parseAftermath()`
+**Comparison:** `diffRuns()`, `renderRunDiff()`
+**Errors:** `StepExecutionError`, `ParseError`, `PipelineAbortedError`, `ParallelBranchError`
+**Callers:** `LlmCaller`, `claude-cli`, `claude-stream`
 
 ## Exports
 

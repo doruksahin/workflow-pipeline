@@ -129,9 +129,13 @@ interface PipelineContext<TLogger = unknown> {
 
 | Document | When to read |
 |----------|--------------|
-| [src/pipeline-builder.md](src/pipeline-builder.md) | Creating steps, composing pipelines, running, fixtures, API reference |
+| [docs/cookbook.md](docs/cookbook.md) | Migrating an existing `claude -p` script to a pipeline step |
+| [docs/callers.md](docs/callers.md) | Claude CLI, Claude Stream, and custom LLM callers |
+| [docs/primitives.md](docs/primitives.md) | `conditional()`, `asStep()`, `withMiddleware()` — composition primitives |
+| [src/pipeline-builder.md](src/pipeline-builder.md) | Full API reference: step creation, composition, running, fixtures |
 | [docs/foundations/index.md](docs/foundations/index.md) | Design principles: structured I/O, error handling, SRP, reproducibility, observability |
 | [docs/foundation-rules/index.md](docs/foundation-rules/index.md) | Rules for writing LLM pipeline scripts: certainty, scripts, scalability, traceability |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
 
 ## TypeScript
 
