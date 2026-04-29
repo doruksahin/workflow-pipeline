@@ -16,7 +16,9 @@
     "./middleware": "./dist/middleware.js",
     "./as-step": "./dist/as-step.js",
     "./callers/claude-cli": "./dist/callers/claude-cli.js",
-    "./callers/claude-stream": "./dist/callers/claude-stream.js"
+    "./callers/claude-stream": "./dist/callers/claude-stream.js",
+    "./callers/claude-sdk": "./dist/callers/claude-sdk.js",
+    "./tools": "./dist/tools/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -25,10 +27,17 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.123",
     "@types/node": "^25.5.0",
     "eslint": "^10.2.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.1",
     "vitest": "^4.1.0"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.123"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
   }
 }
