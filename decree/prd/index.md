@@ -4,5 +4,6 @@
 
 | PRD | Title | Status | Date |
 |-----|-----|-----|-----|
+| PRD-001 | PRD-001 Reduce Wheel-Reinvention in Internals | draft | 2026-05-02 |
 
 <!-- GENERATED:decree-graph — do not edit below this line -->

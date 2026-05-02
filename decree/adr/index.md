@@ -4,5 +4,6 @@
 
 | ADR | Title | Status | Date | Supersedes |
 |-----|-------|--------|------|------------|
+| ADR-0001 | ADR-0001 Bedrock Plus Swap Plus Lock-In Verification Methodology | accepted | 2026-05-02 |  |
 
 <!-- GENERATED:decree-graph — do not edit below this line -->
