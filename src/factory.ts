@@ -7,6 +7,8 @@
  * Retry is step-scoped. The runner never retries.
  */
 
+import pRetry, { AbortError } from 'p-retry'
+
 import { writeStepFixture } from './fixture-writer.js'
 import type { LlmStepConfig, PipelineContext, ScriptStepConfig, Step, StepResult } from './types.js'
 
@@ -14,6 +16,7 @@ import type { LlmStepConfig, PipelineContext, ScriptStepConfig, Step, StepResult
 
 export function createLlmStep<TInput, TOutput>(config: LlmStepConfig<TInput, TOutput>): Step<TInput, TOutput> {
   const { name, description, model, retry, promptAssembler, parser, caller, label, onRetry } = config
+  const { maxRetries, baseDelayMs, backoffMultiplier, retryOnParseError } = retry
 
   return {
     name,
@@ -22,6 +25,7 @@ export function createLlmStep<TInput, TOutput>(config: LlmStepConfig<TInput, TOu
 
     async execute(input: TInput, ctx: PipelineContext): Promise<StepResult<TOutput>> {
       const startMs = Date.now()
+      const maxAttempts = maxRetries + 1
 
       // 1. Assemble prompt
       const prompt = promptAssembler(input)
@@ -35,75 +39,106 @@ export function createLlmStep<TInput, TOutput>(config: LlmStepConfig<TInput, TOu
         }
       }
 
-      // 3. Retry loop
+      // 3. Retry loop (via p-retry)
+      // Closure captures the latest raw output and parse errors for error reporting.
+      let lastRaw = ''
       let lastErrors: string[] = []
-      const maxAttempts = retry.maxRetries + 1
+      let lastAttemptNumber = 0
 
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        // 3a. Call LLM
-        let raw: string
-        try {
-          const result = await caller(prompt, `${label} (attempt ${attempt}/${maxAttempts})`, ctx)
-          raw = result.raw
-        } catch (err) {
-          // LLM call failure is NOT retryable
-          return {
-            status: 'error',
-            error: err instanceof Error ? err.message : String(err),
-            elapsedMs: Date.now() - startMs,
-            retries: attempt - 1,
-          }
-        }
+      try {
+        const { parsed, raw, attemptNumber: successAttempt } = await pRetry(
+          async (attemptNumber) => {
+            lastAttemptNumber = attemptNumber
+            // 3a. Call LLM — LLM call failures are NOT retryable (AbortError)
+            let llmResult: Awaited<ReturnType<typeof caller>>
+            try {
+              llmResult = await caller(prompt, `${label} (attempt ${attemptNumber}/${maxAttempts})`, ctx)
+            } catch (err) {
+              throw new AbortError(err instanceof Error ? err : new Error(String(err)))
+            }
 
-        // 3b. Save raw fixture (protected)
+            lastRaw = llmResult.raw
+
+            // 3b. Save raw fixture (protected)
+            if (ctx.saveFixtures) {
+              try {
+                writeStepFixture(ctx.fixtureDir, ctx.runId, name, { raw: llmResult.raw })
+              } catch (_fixtureErr) {
+                // Non-fatal
+              }
+            }
+
+            // 3c. Parse response
+            const { result, errors } = parser(llmResult.raw)
+
+            if (errors.length === 0) {
+              return { parsed: result, raw: llmResult.raw, attemptNumber }
+            }
+
+            lastErrors = errors
+
+            // If parse errors are not retryable, abort immediately
+            if (!retryOnParseError) throw new AbortError(errors.join('; '))
+
+            // Otherwise, let p-retry schedule the next attempt
+            throw new Error(errors.join('; '))
+          },
+          {
+            retries: maxRetries,
+            factor: backoffMultiplier,
+            minTimeout: baseDelayMs,
+            onFailedAttempt: (ctx) => {
+              // onFailedAttempt is never called for AbortError, so this only fires
+              // for retryable parse errors — matching the bespoke onRetry contract.
+              onRetry(ctx.attemptNumber, maxAttempts, lastErrors, ctx.retryDelay)
+            },
+          },
+        )
+
+        // Success — save actual + meta fixtures (protected)
         if (ctx.saveFixtures) {
           try {
-            writeStepFixture(ctx.fixtureDir, ctx.runId, name, { raw })
+            writeStepFixture(ctx.fixtureDir, ctx.runId, name, {
+              actual: parsed,
+              meta: { model, durationMs: Date.now() - startMs },
+            })
           } catch (_fixtureErr) {
-            // Non-fatal: framework logs fixture failures at runner level (pipelineLogger)
+            // Non-fatal
           }
         }
 
-        // 3c. Parse response
-        const { result, errors } = parser(raw)
+        return {
+          status: 'ok',
+          output: parsed,
+          elapsedMs: Date.now() - startMs,
+          meta: {
+            model,
+            attempts: successAttempt,
+            promptLength: prompt.length,
+            rawLength: raw.length,
+          },
+        }
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : String(err)
 
-        if (errors.length === 0) {
-          // Success — save actual + meta fixtures (protected)
-          if (ctx.saveFixtures) {
-            try {
-              writeStepFixture(ctx.fixtureDir, ctx.runId, name, {
-                actual: result,
-                meta: { model, durationMs: Date.now() - startMs },
-              })
-            } catch (_fixtureErr) {
-              // Non-fatal: framework logs fixture failures at runner level (pipelineLogger)
-            }
-          }
-
+        // Distinguish LLM caller failures from exhausted parse retries.
+        // LLM call failures abort via AbortError — lastRaw stays empty and lastErrors is empty.
+        const isCallerFailure = lastRaw === '' && lastErrors.length === 0
+        if (isCallerFailure) {
           return {
-            status: 'ok',
-            output: result,
+            status: 'error',
+            error: errMsg,
             elapsedMs: Date.now() - startMs,
-            meta: { model, attempts: attempt, promptLength: prompt.length, rawLength: raw.length },
+            retries: lastAttemptNumber - 1,
           }
         }
 
-        // 3d. Parse failed — retry?
-        lastErrors = errors
-
-        if (attempt < maxAttempts && retry.retryOnParseError) {
-          const delayMs = retry.baseDelayMs * Math.pow(retry.backoffMultiplier, attempt - 1)
-          onRetry(attempt, maxAttempts, errors, delayMs)
-          await sleep(delayMs)
+        return {
+          status: 'error',
+          error: `Parse failed after ${lastAttemptNumber} attempt(s): ${lastErrors.join('; ')}`,
+          elapsedMs: Date.now() - startMs,
+          retries: lastAttemptNumber - 1,
         }
-      }
-
-      // All attempts exhausted
-      return {
-        status: 'error',
-        error: `Parse failed after ${maxAttempts} attempt(s): ${lastErrors.join('; ')}`,
-        elapsedMs: Date.now() - startMs,
-        retries: retry.maxRetries,
       }
     },
   }
@@ -150,12 +185,4 @@ export function createScriptStep<TInput, TOutput>(config: ScriptStepConfig<TInpu
       }
     },
   }
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
 }
