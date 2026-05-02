@@ -80,32 +80,32 @@ The consumer regression check (in `jira-task-to-md`) is especially valuable here
 
 ### Commit 1 — Bedrock
 
-- [ ] `src/__tests__/callers.cli.characterization.test.ts` exists with the seven tests listed
-- [ ] Tests use a node-based fixture script, not the real `claude` binary
-- [ ] All seven tests pass against the current (bespoke) implementation
-- [ ] Commit message: `feat: characterization tests for subprocess spawn`
-- [ ] `pnpm build && pnpm test` green
+- [x] `src/__tests__/callers.cli.characterization.test.ts` exists with the seven tests listed
+- [x] Tests use a node-based fixture script, not the real `claude` binary
+- [x] All seven tests pass against the current (bespoke) implementation
+- [x] Commit message: `feat: characterization tests for subprocess spawn`
+- [x] `pnpm build && pnpm test` green
 
 ### Commit 2 — Swap
 
-- [ ] `execa` added to dependencies in `package.json`
-- [ ] `pnpm-lock.yaml` regenerated
-- [ ] Bespoke `spawn` block in `src/callers/claude-cli.ts` deleted
-- [ ] Replaced with `execa()` call as designed
-- [ ] All bedrock tests pass unchanged
-- [ ] Commit message: `refactor: swap child_process.spawn → execa`
-- [ ] `pnpm build && pnpm test` green
+- [x] `execa` added to dependencies in `package.json`
+- [x] `pnpm-lock.yaml` regenerated
+- [x] Bespoke `spawn` block in `src/callers/claude-cli.ts` deleted
+- [x] Replaced with `execa()` call as designed
+- [x] All bedrock tests pass unchanged
+- [x] Commit message: `refactor: swap child_process.spawn → execa`
+- [x] `pnpm build && pnpm test` green
 
 ### Commit 3 — Lock-in
 
-- [ ] `src/__tests__/fixtures/claude-cli-envelope.json` exists and is committed
-- [ ] `src/__tests__/callers.cli.lockin.test.ts` exists with replay test + envelope property test
-- [ ] Commit message: `test: lock-in — fixture replay for claude-cli`
-- [ ] `pnpm build && pnpm test` green
+- [x] `src/__tests__/fixtures/claude-cli-envelope.json` exists and is committed
+- [x] `src/__tests__/callers.cli.lockin.test.ts` exists with replay test + envelope property test
+- [x] Commit message: `test: lock-in — fixture replay for claude-cli`
+- [x] `pnpm build && pnpm test` green
 
 ### Verification
 
-- [ ] Lines removed from `src/callers/claude-cli.ts`: ≥ 30 (target ~40)
-- [ ] `LlmCaller` interface unchanged
+- [x] Lines removed from `src/callers/claude-cli.ts`: ≥ 30 (target ~40) — actual: 99
+- [x] `LlmCaller` interface unchanged
 - [ ] Consumer regression: in `jira-task-to-md`, baseline-vs-post-swap run produces zero meaningful diff for a workflow that goes through the CLI caller
 - [ ] `decree status SPEC-002 implement` once all boxes checked
