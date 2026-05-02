@@ -3,7 +3,8 @@
  *
  * Ships as a convenience export. Consumers can provide their own LlmCaller instead.
  */
-import { execSync, spawn } from 'node:child_process'
+import { execSync } from 'node:child_process'
+import { execa } from 'execa'
 
 import { DEFAULT_CALLER_MAX_BUFFER, DEFAULT_CALLER_TIMEOUT_MS } from '../constants.js'
 import type { LlmCaller, PipelineContext, PipelineLogger } from '../types.js'
@@ -91,7 +92,7 @@ export function callClaude(prompt: string, label: string, opts: ClaudeCallerOpti
 
 // ── Async Call ───────────────────────────────────────────────────────────────
 
-export function callClaudeAsync(
+export async function callClaudeAsync(
   prompt: string,
   label: string,
   opts: ClaudeCallerOptions,
@@ -111,107 +112,83 @@ export function callClaudeAsync(
     onToolCall = emitters.onToolCall
   }
 
-  return new Promise<CallClaudeResult>((resolve, reject) => {
-    let settled = false
-
-    // Always stream-json — every pipeline consumer gets real-time tool visibility
-    const child = spawn('claude', ['-p', '--output-format', 'stream-json', '--verbose'], {
-      env: { ...process.env, CLAUDECODE: '' },
-      stdio: ['pipe', 'pipe', 'pipe'],
-    })
-
-    const stderrChunks: Buffer[] = []
-    let totalSize = 0
-    let buffer = ''
-    let finalText = ''
-    let sessionId: string | undefined
-    const toolCalls: ToolCallTrace[] = []
-    const pendingTools = new Map<string, { trace: ToolCallTrace; startMs: number }>()
-
-    child.stdout.on('data', (chunk: Buffer) => {
-      totalSize += chunk.length
-      if (totalSize > maxBuffer) {
-        child.kill()
-        if (!settled) {
-          settled = true
-          reject(new Error(`claude -p output exceeded ${maxBuffer} bytes (${label})`))
-        }
-        return
-      }
-
-      buffer += chunk.toString('utf8')
-      let newlineIdx: number
-      while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-        const line = buffer.slice(0, newlineIdx).trim()
-        buffer = buffer.slice(newlineIdx + 1)
-        if (!line) continue
-
-        let msg: unknown
-        try {
-          msg = JSON.parse(line)
-        } catch {
-          continue
-        }
-
-        // Always forward the raw NDJSON line — this is the pipeline's public protocol
-        if (ctx?.onEvent && ctx?.currentStep) {
-          ctx.onEvent({
-            type: 'step:output-line',
-            step: ctx.currentStep,
-            line,
-            timestamp: Date.now(),
-          })
-        }
-
-        const sid = processMessage(
-          msg as Parameters<typeof processMessage>[0],
-          toolCalls,
-          pendingTools,
-          onToolStart,
-          onToolCall,
-          (text) => { finalText = text },
-          () => {},
-        )
-        if (sid) sessionId = sid
-      }
-    })
-
-    child.stderr.on('data', (chunk: Buffer) => { stderrChunks.push(chunk) })
-
-    const timer = setTimeout(() => {
-      child.kill()
-      if (!settled) { settled = true; reject(new Error(`claude -p timed out after ${timeoutMs}ms (${label})`)) }
-    }, timeoutMs)
-
-    child.on('close', (code) => {
-      clearTimeout(timer)
-      if (settled) return
-      if (code !== 0) { settled = true; reject(new Error(`claude -p exited with code ${code} (${label})`)); return }
-      const elapsedMs = Date.now() - startTime
-      const stderrText = Buffer.concat(stderrChunks).toString('utf8')
-      logger.info('claude -p completed', { label, elapsedMs, outputFormat: 'stream-json', sessionId })
-
-      // Emit session ID so TUI can display it for debugging
-      if (sessionId && ctx?.onEvent && ctx?.currentStep) {
-        ctx.onEvent({
-          type: 'step:session',
-          step: ctx.currentStep,
-          sessionId,
-          timestamp: Date.now(),
-        })
-      }
-
-      settled = true
-      resolve({ raw: finalText, elapsedMs, stderr: stderrText })
-    })
-
-    child.on('error', (err) => {
-      clearTimeout(timer)
-      if (!settled) { settled = true; reject(new Error(`claude -p failed (${label}): ${err.message}`, { cause: err })) }
-    })
-
-    // Write prompt to stdin and close
-    child.stdin.write(prompt)
-    child.stdin.end()
+  const result = await execa('claude', ['-p', '--output-format', 'stream-json', '--verbose'], {
+    input: prompt,
+    timeout: timeoutMs,
+    maxBuffer,
+    reject: false,
+    env: { ...process.env, CLAUDECODE: '' },
   })
+
+  const elapsedMs = Date.now() - startTime
+
+  if (result.timedOut) {
+    throw new Error(`claude -p timed out after ${timeoutMs}ms (${label})`)
+  }
+  if (result.isCanceled) {
+    throw new Error(`claude -p was cancelled (${label})`)
+  }
+  if (result.isMaxBuffer) {
+    throw new Error(`claude -p output exceeded ${maxBuffer} bytes (${label})`)
+  }
+  if (result.exitCode !== 0) {
+    throw new Error(`claude -p exited with code ${String(result.exitCode)} (${label})`)
+  }
+
+  // ── Envelope parsing (preserved from bespoke implementation) ─────────────────
+  const toolCalls: ToolCallTrace[] = []
+  const pendingTools = new Map<string, { trace: ToolCallTrace; startMs: number }>()
+  let finalText = ''
+  let sessionId: string | undefined
+
+  const lines = result.stdout.split('\n')
+  for (const raw of lines) {
+    const line = raw.trim()
+    if (!line) continue
+
+    let msg: unknown
+    try {
+      msg = JSON.parse(line)
+    } catch {
+      continue
+    }
+
+    // Forward the raw NDJSON line — this is the pipeline's public protocol.
+    // NOTE: events now fire post-hoc (after process completes) rather than
+    // in real-time during subprocess execution. The observable contract —
+    // that all NDJSON lines are emitted — is preserved.
+    if (ctx?.onEvent && ctx?.currentStep) {
+      ctx.onEvent({
+        type: 'step:output-line',
+        step: ctx.currentStep,
+        line,
+        timestamp: Date.now(),
+      })
+    }
+
+    const sid = processMessage(
+      msg as Parameters<typeof processMessage>[0],
+      toolCalls,
+      pendingTools,
+      onToolStart,
+      onToolCall,
+      (text) => { finalText = text },
+      () => {},
+    )
+    if (sid) sessionId = sid
+  }
+
+  logger.info('claude -p completed', { label, elapsedMs, outputFormat: 'stream-json', sessionId })
+
+  // Emit session ID so TUI can display it for debugging
+  if (sessionId && ctx?.onEvent && ctx?.currentStep) {
+    ctx.onEvent({
+      type: 'step:session',
+      step: ctx.currentStep,
+      sessionId,
+      timestamp: Date.now(),
+    })
+  }
+
+  return { raw: finalText, elapsedMs, stderr: result.stderr }
 }
