@@ -1,0 +1,5 @@
+[
+  {"type":"system","subtype":"init","session_id":"sess-fixture-001","tools":[],"mcp_servers":[]},
+  {"type":"assistant","message":{"id":"msg-fixture-001","type":"message","role":"assistant","content":[{"type":"text","text":"The answer is 42."}],"model":"claude-opus-4-5","stop_reason":"end_turn","usage":{"input_tokens":15,"output_tokens":7}},"session_id":"sess-fixture-001"},
+  {"type":"result","subtype":"success","is_error":false,"result":"The answer is 42.","session_id":"sess-fixture-001","total_cost_usd":0.00042,"total_input_tokens":15,"total_output_tokens":7,"num_turns":1}
+]
