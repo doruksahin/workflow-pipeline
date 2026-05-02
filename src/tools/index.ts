@@ -9,7 +9,7 @@
  *
  * Usage:
  *   import { createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk'
- *   import { createPlanTools, buildTools } from 'step-pipeline/tools'
+ *   import { createPlanTools, buildTools } from 'workflow-pipeline/tools'
  *
  *   const planServer = createSdkMcpServer({ name: 'plan', tools: createPlanTools(cwd) })
  *   const buildServer = createSdkMcpServer({ name: 'build', tools: buildTools })

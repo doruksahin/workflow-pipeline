@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to step-pipeline are documented here.
+All notable changes to workflow-pipeline are documented here.
 
 ## [0.2.0] — 2026-04-28
 
@@ -13,7 +13,7 @@ All notable changes to step-pipeline are documented here.
 - **`StepManifestEnrichment` type** — `{ branch?: string; substeps?: StepManifestEntry[] }`
 - **`StepKind` values** — `'conditional'` and `'pipeline'` added to the union.
 - **`StepManifestEntry` fields** — Optional `branch` and `substeps` for conditional/pipeline steps.
-- New subpath exports: `step-pipeline/conditional`, `step-pipeline/middleware`, `step-pipeline/as-step`
+- New subpath exports: `workflow-pipeline/conditional`, `workflow-pipeline/middleware`, `workflow-pipeline/as-step`
 - Callers guide, primitives guide, cookbook, and changelog documentation
 
 ### Fixed

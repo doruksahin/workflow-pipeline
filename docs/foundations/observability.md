@@ -20,7 +20,7 @@ This is intentional — no hidden defaults. The consumer always knows exactly wh
 ### Minimal Options (silent)
 
 ```typescript
-import { SILENT_LOGGER } from 'step-pipeline'
+import { SILENT_LOGGER } from 'workflow-pipeline'
 
 const options: PipelineRunOptions = {
   onEvent() {},
@@ -141,7 +141,7 @@ interface PipelineLogger {
 For when you don't need framework logging:
 
 ```typescript
-import { SILENT_LOGGER } from 'step-pipeline'
+import { SILENT_LOGGER } from 'workflow-pipeline'
 // { debug() {}, info() {}, warn() {}, error() {} }
 ```
 
@@ -172,7 +172,7 @@ import { SILENT_LOGGER } from 'step-pipeline'
 Both built-in callers accept a `PipelineLogger` via their options. Use the defaults for silent operation:
 
 ```typescript
-import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'step-pipeline/callers/claude-cli'
+import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-cli'
 
 // Silent (default)
 const caller = createClaudeCaller(DEFAULT_CLAUDE_CALLER_OPTIONS)
@@ -195,7 +195,7 @@ const caller = createClaudeCaller({ ...DEFAULT_CLAUDE_CALLER_OPTIONS, logger: co
 The stream caller parses Claude Code's NDJSON and extracts tool calls:
 
 ```typescript
-import { createClaudeStreamCaller, DEFAULT_STREAM_CALLER_OPTIONS } from 'step-pipeline/callers/claude-stream'
+import { createClaudeStreamCaller, DEFAULT_STREAM_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-stream'
 
 const caller = createClaudeStreamCaller({
   ...DEFAULT_STREAM_CALLER_OPTIONS,

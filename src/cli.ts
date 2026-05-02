@@ -2,7 +2,7 @@
  * CLI helpers for emitting pipeline events as NDJSON to stdout.
  *
  * Usage in consumer:
- *   import { createNdjsonEmitter, createTracingCaller } from 'step-pipeline/cli'
+ *   import { createNdjsonEmitter, createTracingCaller } from 'workflow-pipeline/cli'
  *   const emit = createNdjsonEmitter()
  *   const result = await pipeline.run(input, ctx, {
  *     onEvent: emit,

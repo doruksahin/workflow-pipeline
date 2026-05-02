@@ -1,6 +1,6 @@
 # Cookbook: Turn Your Script into a Pipeline Step
 
-**TL;DR:** If you have a script that calls `claude -p` and parses the output, you can convert it to a step-pipeline step in 3 minutes. You get retry, fixtures, events, and type-safe composition for free.
+**TL;DR:** If you have a script that calls `claude -p` and parses the output, you can convert it to a workflow-pipeline step in 3 minutes. You get retry, fixtures, events, and type-safe composition for free.
 
 ## Before and After
 
@@ -19,8 +19,8 @@ console.log(output)
 **After** — a reusable pipeline step:
 
 ```typescript
-import { createLlmStep, DEFAULT_RETRY } from 'step-pipeline'
-import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'step-pipeline/callers/claude-cli'
+import { createLlmStep, DEFAULT_RETRY } from 'workflow-pipeline'
+import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-cli'
 
 const caller = createClaudeCaller(DEFAULT_CLAUDE_CALLER_OPTIONS)
 
@@ -110,8 +110,8 @@ The `errors` array is key: if it's non-empty and `retryOnParseError` is true, th
 ### Step 4: Wire it into createLlmStep
 
 ```typescript
-import { createLlmStep, DEFAULT_RETRY } from 'step-pipeline'
-import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'step-pipeline/callers/claude-cli'
+import { createLlmStep, DEFAULT_RETRY } from 'workflow-pipeline'
+import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-cli'
 
 const caller = createClaudeCaller(DEFAULT_CLAUDE_CALLER_OPTIONS)
 
@@ -133,7 +133,7 @@ export const classifyStep = createLlmStep<FileSet, ClassifyOutput>({
 ### Step 5: Compose into a pipeline
 
 ```typescript
-import { PipelineBuilder } from 'step-pipeline'
+import { PipelineBuilder } from 'workflow-pipeline'
 
 const pipeline = new PipelineBuilder<string>()       // string = target directory
   .step(collectFilesStep)                             // string → FileSet
@@ -156,7 +156,7 @@ const files = glob(targetDir, '**/*.tsx')
 if (files.length === 0) throw new Error('No files found')
 
 // After: script step
-import { createScriptStep } from 'step-pipeline'
+import { createScriptStep } from 'workflow-pipeline'
 
 export const collectFilesStep = createScriptStep<string, FileSet>({
   name: 'collect-files',
@@ -176,7 +176,7 @@ export const collectFilesStep = createScriptStep<string, FileSet>({
 ## Running Your Pipeline
 
 ```typescript
-import { SILENT_LOGGER } from 'step-pipeline'
+import { SILENT_LOGGER } from 'workflow-pipeline'
 
 const result = await pipeline.run(
   '/path/to/target',

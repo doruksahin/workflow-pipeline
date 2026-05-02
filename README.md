@@ -1,4 +1,4 @@
-# step-pipeline
+# workflow-pipeline
 
 Type-safe pipeline framework for composing LLM + script steps into reproducible workflows.
 
@@ -10,7 +10,7 @@ LLM calls are expensive and flaky — you need retry logic with exponential back
 
 ```bash
 # Not yet published to npm. Use a local link:
-pnpm link /path/to/llm-pipeline
+pnpm link /path/to/workflow-pipeline
 ```
 
 > Requires Node >= 22. ESM only.
@@ -24,7 +24,7 @@ import {
   PipelineBuilder,
   SILENT_LOGGER,
   type LlmCaller,
-} from 'step-pipeline'
+} from 'workflow-pipeline'
 
 // Script step: pure transform
 const gatherFiles = createScriptStep({

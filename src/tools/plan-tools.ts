@@ -5,7 +5,7 @@
  * escape the session directory.
  *
  * Usage:
- *   import { createPlanTools } from 'step-pipeline/tools'
+ *   import { createPlanTools } from 'workflow-pipeline/tools'
  *   const tools = createPlanTools(worktreePath)
  */
 import { execFileSync } from 'node:child_process'

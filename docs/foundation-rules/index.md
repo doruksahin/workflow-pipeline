@@ -2,7 +2,7 @@
 
 These rules govern every LLM pipeline script. They are not aspirational — they are enforced by the type system, code review, and the framework itself.
 
-See also: [docs/foundations/](../foundations/index.md) for how step-pipeline implements these rules in practice.
+See also: [docs/foundations/](../foundations/index.md) for how workflow-pipeline implements these rules in practice.
 
 ---
 

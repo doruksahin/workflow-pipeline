@@ -44,7 +44,7 @@ export const DEFAULT_CLAUDE_CALLER_OPTIONS: ClaudeCallerOptions = {
  * Create an LlmCaller that uses `claude -p` CLI.
  *
  * Usage:
- *   import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'step-pipeline/callers/claude-cli'
+ *   import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-cli'
  *   const caller = createClaudeCaller(DEFAULT_CLAUDE_CALLER_OPTIONS)
  *   const caller = createClaudeCaller({ ...DEFAULT_CLAUDE_CALLER_OPTIONS, timeoutMs: 300_000 })
  */

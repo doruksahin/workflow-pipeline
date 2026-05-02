@@ -20,7 +20,7 @@ Type-safe engine for composing LLM + script steps into sequential workflows with
 ### Script Step
 
 ```typescript
-import { createScriptStep } from 'step-pipeline'
+import { createScriptStep } from 'workflow-pipeline'
 
 const collectFiles = createScriptStep<string, FileSet>({
   name: 'collect-files',
@@ -38,8 +38,8 @@ const collectFiles = createScriptStep<string, FileSet>({
 ### LLM Step
 
 ```typescript
-import { createLlmStep, DEFAULT_RETRY } from 'step-pipeline'
-import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'step-pipeline/callers/claude-cli'
+import { createLlmStep, DEFAULT_RETRY } from 'workflow-pipeline'
+import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-cli'
 
 const classifyStep = createLlmStep<FileSet, ClassifyOutput>({
   name: 'classify',
@@ -76,12 +76,12 @@ The package ships two callers for `claude -p`:
 
 ```typescript
 // Standard — captures JSON envelope
-import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'step-pipeline/callers/claude-cli'
+import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-cli'
 const caller = createClaudeCaller(DEFAULT_CLAUDE_CALLER_OPTIONS)
 const caller = createClaudeCaller({ ...DEFAULT_CLAUDE_CALLER_OPTIONS, timeoutMs: 300_000 })
 
 // Stream — parses NDJSON, traces tool calls
-import { createClaudeStreamCaller, DEFAULT_STREAM_CALLER_OPTIONS } from 'step-pipeline/callers/claude-stream'
+import { createClaudeStreamCaller, DEFAULT_STREAM_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-stream'
 const caller = createClaudeStreamCaller({
   ...DEFAULT_STREAM_CALLER_OPTIONS,
   onToolCall(trace) { console.log(`Tool: ${trace.name}`) },
@@ -93,7 +93,7 @@ You can provide any function that matches the `LlmCaller` signature — OpenAI, 
 #### Retry
 
 ```typescript
-import { DEFAULT_RETRY } from 'step-pipeline'
+import { DEFAULT_RETRY } from 'workflow-pipeline'
 // { maxRetries: 2, baseDelayMs: 1000, backoffMultiplier: 2, retryOnParseError: true }
 
 // Or custom:
@@ -105,7 +105,7 @@ LLM call failures (timeout, crash) are **not** retried — only parse errors are
 ## Composing a Pipeline
 
 ```typescript
-import { PipelineBuilder } from 'step-pipeline'
+import { PipelineBuilder } from 'workflow-pipeline'
 
 const pipeline = new PipelineBuilder<string>()   // <-- pipeline input type
   .step(collectFiles)     // string -> FileSet
@@ -121,8 +121,8 @@ Type errors at `.step()` mean the step's input doesn't match the previous step's
 `Pipeline.run()` requires three arguments: input, context, and options.
 
 ```typescript
-import { SILENT_LOGGER } from 'step-pipeline'
-import type { PipelineContext, PipelineRunOptions } from 'step-pipeline'
+import { SILENT_LOGGER } from 'workflow-pipeline'
+import type { PipelineContext, PipelineRunOptions } from 'workflow-pipeline'
 
 const ctx: PipelineContext = {
   runId: 'my-run-001',
@@ -157,7 +157,7 @@ See [docs/foundations/observability.md](../docs/foundations/observability.md) fo
 ### Parallel Steps
 
 ```typescript
-import { parallel } from 'step-pipeline'
+import { parallel } from 'workflow-pipeline'
 
 // Run multiple steps concurrently from the same input
 const bothSteps = parallel('classify-both', {
@@ -192,7 +192,7 @@ Fixture writes are protected — if a write fails, the step/pipeline continues. 
 Read fixtures back:
 
 ```typescript
-import { readStepFixture } from 'step-pipeline'
+import { readStepFixture } from 'workflow-pipeline'
 
 // Without validation (existing behavior)
 const output = readStepFixture<ClassifyOutput>('/fixtures/run-001/classify')
@@ -204,7 +204,7 @@ const output = readStepFixture<ClassifyOutput>('/fixtures/run-001/classify', isC
 ### Comparing Runs
 
 ```typescript
-import { diffRuns, renderRunDiff } from 'step-pipeline'
+import { diffRuns, renderRunDiff } from 'workflow-pipeline'
 
 const diff = diffRuns(previousManifest, currentManifest)
 console.log(renderRunDiff(diff))
@@ -318,13 +318,13 @@ renderRunDiff(diff) → string
 // Errors
 StepExecutionError, ParallelBranchError, ParseError, PipelineAbortedError
 
-// Callers (step-pipeline/callers/claude-cli)
+// Callers (workflow-pipeline/callers/claude-cli)
 createClaudeCaller(opts: ClaudeCallerOptions) → LlmCaller
 callClaude(prompt, label, opts: ClaudeCallerOptions) → CallClaudeResult
 callClaudeAsync(prompt, label, opts: ClaudeCallerOptions) → Promise<CallClaudeResult>
 DEFAULT_CLAUDE_CALLER_OPTIONS → ClaudeCallerOptions
 
-// Callers (step-pipeline/callers/claude-stream)
+// Callers (workflow-pipeline/callers/claude-stream)
 createClaudeStreamCaller(opts: StreamCallerOptions) → (prompt, label) => Promise<StreamCallerResult>
 DEFAULT_STREAM_CALLER_OPTIONS → StreamCallerOptions
 ```

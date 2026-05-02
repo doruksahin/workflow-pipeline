@@ -4,7 +4,7 @@
  * Provides typed permission modes, tool restriction, canUseTool filtering,
  * real-time streaming via step:output-line events, and per-session JSONL recording.
  *
- * This is the only file in step-pipeline that touches the SDK API.
+ * This is the only file in workflow-pipeline that touches the SDK API.
  * If Anthropic changes the SDK, only this file needs updating.
  */
 import { appendFileSync, mkdirSync } from 'node:fs'

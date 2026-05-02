@@ -1,6 +1,6 @@
 # Foundations
 
-Design principles that govern every line in `step-pipeline`. These aren't aspirational — they're enforced by the type system, the runner, and code review.
+Design principles that govern every line in `workflow-pipeline`. These aren't aspirational — they're enforced by the type system, the runner, and code review.
 
 ## The Rules
 

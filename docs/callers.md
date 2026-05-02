@@ -1,6 +1,6 @@
 # Callers Guide
 
-**TL;DR:** A caller is a function that sends a prompt to an LLM and returns raw text. step-pipeline ships two Claude callers (`claude-cli` and `claude-stream`). You can write your own in ~10 lines. Every `createLlmStep` requires a caller.
+**TL;DR:** A caller is a function that sends a prompt to an LLM and returns raw text. workflow-pipeline ships two Claude callers (`claude-cli` and `claude-stream`). You can write your own in ~10 lines. Every `createLlmStep` requires a caller.
 
 ## The LlmCaller Interface
 
@@ -21,7 +21,7 @@ That's it. One function, three return fields. Everything else is optional.
 The most common path. Spawns `claude -p --output-format stream-json` as a subprocess.
 
 ```typescript
-import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'step-pipeline/callers/claude-cli'
+import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-cli'
 
 // Use defaults (180s timeout, 2MB buffer, silent logger)
 const caller = createClaudeCaller(DEFAULT_CLAUDE_CALLER_OPTIONS)
@@ -67,7 +67,7 @@ This happens automatically. No configuration needed.
 Lower-level caller with explicit access to tool call traces and token usage. Same NDJSON parsing, but returns enriched results.
 
 ```typescript
-import { createClaudeStreamCaller, DEFAULT_STREAM_CALLER_OPTIONS } from 'step-pipeline/callers/claude-stream'
+import { createClaudeStreamCaller, DEFAULT_STREAM_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-stream'
 
 const caller = createClaudeStreamCaller({
   ...DEFAULT_STREAM_CALLER_OPTIONS,
@@ -86,7 +86,7 @@ const result = await caller('Analyze this code...', 'analyze')
 | Use `claude-cli` when | Use `claude-stream` when |
 |---|---|
 | Building pipeline steps via `createLlmStep` | Need direct access to tool call traces |
-| Want automatic event integration | Building custom tooling outside step-pipeline |
+| Want automatic event integration | Building custom tooling outside workflow-pipeline |
 | Don't need token counts | Need per-call token usage tracking |
 
 ## Writing a Custom Caller
@@ -95,7 +95,7 @@ Any function matching `LlmCaller` works. Example with the Anthropic SDK:
 
 ```typescript
 import Anthropic from '@anthropic-ai/sdk'
-import type { LlmCaller } from 'step-pipeline'
+import type { LlmCaller } from 'workflow-pipeline'
 
 const anthropic = new Anthropic()
 
@@ -131,8 +131,8 @@ const mockCaller: LlmCaller = async (prompt, label) => ({
 Every `createLlmStep` takes a `caller` field:
 
 ```typescript
-import { createLlmStep, DEFAULT_RETRY } from 'step-pipeline'
-import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'step-pipeline/callers/claude-cli'
+import { createLlmStep, DEFAULT_RETRY } from 'workflow-pipeline'
+import { createClaudeCaller, DEFAULT_CLAUDE_CALLER_OPTIONS } from 'workflow-pipeline/callers/claude-cli'
 
 const caller = createClaudeCaller(DEFAULT_CLAUDE_CALLER_OPTIONS)
 
@@ -155,8 +155,8 @@ The step handles calling the caller, retrying on failure, timing, and fixture pe
 
 | Constant | Value | Import from |
 |----------|-------|-------------|
-| `DEFAULT_CALLER_TIMEOUT_MS` | `180_000` (3 min) | `step-pipeline` |
-| `DEFAULT_CALLER_MAX_BUFFER` | `2 * 1024 * 1024` (2 MB) | `step-pipeline` |
-| `DEFAULT_CLAUDE_CALLER_OPTIONS` | `{ timeoutMs, maxBuffer, logger: SILENT_LOGGER }` | `step-pipeline/callers/claude-cli` |
-| `DEFAULT_STREAM_CALLER_OPTIONS` | `{ timeoutMs, maxBuffer, logger, onToolStart, onToolCall }` | `step-pipeline/callers/claude-stream` |
-| `DEFAULT_RETRY` | `{ maxRetries: 2, baseDelayMs: 1000, backoff: 2, retryOnParseError: true }` | `step-pipeline` |
+| `DEFAULT_CALLER_TIMEOUT_MS` | `180_000` (3 min) | `workflow-pipeline` |
+| `DEFAULT_CALLER_MAX_BUFFER` | `2 * 1024 * 1024` (2 MB) | `workflow-pipeline` |
+| `DEFAULT_CLAUDE_CALLER_OPTIONS` | `{ timeoutMs, maxBuffer, logger: SILENT_LOGGER }` | `workflow-pipeline/callers/claude-cli` |
+| `DEFAULT_STREAM_CALLER_OPTIONS` | `{ timeoutMs, maxBuffer, logger, onToolStart, onToolCall }` | `workflow-pipeline/callers/claude-stream` |
+| `DEFAULT_RETRY` | `{ maxRetries: 2, baseDelayMs: 1000, backoff: 2, retryOnParseError: true }` | `workflow-pipeline` |

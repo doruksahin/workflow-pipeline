@@ -1,12 +1,12 @@
-# TUI Integration: step-pipeline + skills-tui-rs
+# TUI Integration: workflow-pipeline + skills-tui-rs
 
-Analysis document for building a pipeline-runner integration between `step-pipeline` (TypeScript pipeline framework) and `skills-tui-rs` (Rust TUI application).
+Analysis document for building a pipeline-runner integration between `workflow-pipeline` (TypeScript pipeline framework) and `skills-tui-rs` (Rust TUI application).
 
 ---
 
 ## 1. Current State of Both Projects
 
-### 1.1 step-pipeline's Observability Surface
+### 1.1 workflow-pipeline's Observability Surface
 
 The pipeline framework has three tiers of observability, all configurable through `PipelineRunOptions`:
 
@@ -176,9 +176,9 @@ Ring buffer of 100 entries, accessible via Ctrl+D. Categorized by `LogSource` (S
 
 ### 2e. Direct Rust FFI
 
-**Mechanism**: Compile step-pipeline as a native library callable from Rust via FFI or napi-rs.
+**Mechanism**: Compile workflow-pipeline as a native library callable from Rust via FFI or napi-rs.
 
-**Feasibility**: Very low. step-pipeline is a TypeScript library running on Node.js. FFI would require embedding a Node.js runtime in the Rust process, or rewriting the pipeline in Rust. The pipeline's value is in its TypeScript ecosystem integration (prompt assembly, parsers, Claude CLI).
+**Feasibility**: Very low. workflow-pipeline is a TypeScript library running on Node.js. FFI would require embedding a Node.js runtime in the Rust process, or rewriting the pipeline in Rust. The pipeline's value is in its TypeScript ecosystem integration (prompt assembly, parsers, Claude CLI).
 
 **Not recommended.**
 
@@ -194,7 +194,7 @@ Ring buffer of 100 entries, accessible via Ctrl+D. Categorized by `LogSource` (S
 
 ## 3. Event Protocol Design
 
-### 3.1 Existing Events (from step-pipeline)
+### 3.1 Existing Events (from workflow-pipeline)
 
 These map 1:1 from the TypeScript `PipelineEvent` union:
 
@@ -211,7 +211,7 @@ These map 1:1 from the TypeScript `PipelineEvent` union:
 {"type":"step:heartbeat","step":"classify","elapsedMs":5000,"timestamp":1705000005000}
 ```
 
-### 3.2 New Events (to add to step-pipeline)
+### 3.2 New Events (to add to workflow-pipeline)
 
 These extend the existing event system for TUI-level observability:
 
@@ -502,7 +502,7 @@ The `*.*` is an animated heartbeat indicator (cycles through `.` `..` `...` whil
 
 ## 5. Implementation Roadmap
 
-### Phase 1: Pipeline CLI Wrapper (step-pipeline side)
+### Phase 1: Pipeline CLI Wrapper (workflow-pipeline side)
 
 **Goal**: A Node.js CLI that runs a pipeline and emits NDJSON events to stdout.
 
@@ -573,7 +573,7 @@ The `*.*` is an animated heartbeat indicator (cycles through `.` `..` `...` whil
 - Config overlay for launching pipelines (model selection, input file picker)
 - History persistence (JSON file, following `RunHistoryStore` pattern)
 - Fixture browser (reuse `text_viewer.rs` for viewing fixture files)
-- Run comparison view (leverage `step-pipeline`'s `diffRuns`/`renderRunDiff`)
+- Run comparison view (leverage `workflow-pipeline`'s `diffRuns`/`renderRunDiff`)
 
 **Estimated effort**: 2-3 days.
 
@@ -583,7 +583,7 @@ The `*.*` is an animated heartbeat indicator (cycles through `.` `..` `...` whil
 
 ### Architecture
 
-1. **Where does the CLI wrapper live?** Options: (a) in `step-pipeline` as `src/cli.ts`, (b) in the consumer repo (e.g., `doruk-workflows`) as a thin script that imports step-pipeline. Option (b) is more flexible since different consumers may have different pipelines.
+1. **Where does the CLI wrapper live?** Options: (a) in `workflow-pipeline` as `src/cli.ts`, (b) in the consumer repo (e.g., `doruk-workflows`) as a thin script that imports workflow-pipeline. Option (b) is more flexible since different consumers may have different pipelines.
 
 2. **Should tool-call tracing be opt-in?** Tool events can be high-frequency during complex steps. The CLI wrapper could accept a `--trace-tools` flag. The TUI could handle this by collapsing rapid tool events.
 
@@ -611,4 +611,4 @@ The `*.*` is an animated heartbeat indicator (cycles through `.` `..` `...` whil
 
 11. **Fixture browsing depth**: Should the TUI render fixture contents inline (like the Skill Lab artifact viewer) or just show paths with copy-to-clipboard? Inline viewing is richer but requires reading potentially large files.
 
-12. **Run comparison**: step-pipeline has `diffRuns()` which produces a `RunDiff` with per-step diffs. Should the TUI have a "compare two runs" mode? This would require a split-pane or diff overlay.
+12. **Run comparison**: workflow-pipeline has `diffRuns()` which produces a `RunDiff` with per-step diffs. Should the TUI have a "compare two runs" mode? This would require a split-pane or diff overlay.

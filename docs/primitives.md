@@ -1,14 +1,14 @@
 # Composition Primitives
 
-**TL;DR:** Three primitives extend step-pipeline beyond linear chains. `conditional()` routes input to one of N branches. `asStep()` nests a pipeline inside another. `withMiddleware()` wraps any step with before/after hooks.
+**TL;DR:** Three primitives extend workflow-pipeline beyond linear chains. `conditional()` routes input to one of N branches. `asStep()` nests a pipeline inside another. `withMiddleware()` wraps any step with before/after hooks.
 
 ## Overview
 
 | Primitive | What it does | Import from |
 |-----------|-------------|-------------|
-| `conditional(name, config)` | Route to one branch based on input | `step-pipeline/conditional` |
-| `asStep(pipeline, options?)` | Wrap a pipeline as a single step | `step-pipeline/as-step` |
-| `withMiddleware(step, hooks)` | Add before/after/onError hooks | `step-pipeline/middleware` |
+| `conditional(name, config)` | Route to one branch based on input | `workflow-pipeline/conditional` |
+| `asStep(pipeline, options?)` | Wrap a pipeline as a single step | `workflow-pipeline/as-step` |
+| `withMiddleware(step, hooks)` | Add before/after/onError hooks | `workflow-pipeline/middleware` |
 
 All three return a `Step<TInput, TOutput>` — they compose with `PipelineBuilder.step()` like any other step.
 
@@ -19,7 +19,7 @@ All three return a `Step<TInput, TOutput>` — they compose with `PipelineBuilde
 Route to one of N branches based on a router function.
 
 ```typescript
-import { conditional } from 'step-pipeline/conditional'
+import { conditional } from 'workflow-pipeline/conditional'
 
 const route = conditional<WorkflowInput, IngestOutput>('route-source', {
   router: (input) => input.source.kind,  // returns a branch key
@@ -55,7 +55,7 @@ All branches must share `<TInput, TOutput>`. TypeScript enforces this at compile
 Nest a pipeline inside a parent pipeline. The parent sees one step; the manifest shows substeps.
 
 ```typescript
-import { asStep } from 'step-pipeline/as-step'
+import { asStep } from 'workflow-pipeline/as-step'
 
 const implementFlow = new PipelineBuilder<ImplementInput>()
   .step(decomposeStep)
@@ -105,7 +105,7 @@ Child events flow through the parent's `onEvent` — the Electron dashboard sees
 Wrap any step with before/after/onError hooks for cross-cutting concerns.
 
 ```typescript
-import { withMiddleware } from 'step-pipeline/middleware'
+import { withMiddleware } from 'workflow-pipeline/middleware'
 
 const validated = withMiddleware(analyzeStep, {
   before: async (input, ctx) => {

@@ -33,7 +33,7 @@ types.ts defines:
 
 2. **Types flow downward.** `types.ts` imports nothing from the framework. Every other file imports from `types.ts`. No circular deps.
 
-3. **Barrel re-exports everything.** `index.ts` re-exports every public type. Consumers import from `step-pipeline`, not from `step-pipeline/src/types`.
+3. **Barrel re-exports everything.** `index.ts` re-exports every public type. Consumers import from `workflow-pipeline`, not from `workflow-pipeline/src/types`.
 
 4. **Config interfaces live next to their domain types.** `LlmStepConfig` and `ScriptStepConfig` live in `types.ts` because they reference `Step`, `LlmCaller`, `RetryConfig`, and `ParseResult`. The factories that consume them import the config type — they don't define it.
 

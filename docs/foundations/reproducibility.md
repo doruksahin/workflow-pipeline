@@ -39,7 +39,7 @@ fixtures/
 ## Reading Fixtures Back
 
 ```typescript
-import { readStepFixture } from 'step-pipeline'
+import { readStepFixture } from 'workflow-pipeline'
 
 // Unchecked (existing behavior)
 const output = readStepFixture<ClassifyOutput>('/fixtures/run-001/classify')
@@ -95,7 +95,7 @@ Same format, all steps show `✓ ok`, no Error section.
 ### Parsing for Resume
 
 ```typescript
-import { parseAftermath } from 'step-pipeline'
+import { parseAftermath } from 'workflow-pipeline'
 
 const data = parseAftermath('/fixtures/run-001/llm-aftermath.md')
 // { runId, pipelineName, completedSteps: ['collect-files'], failedStep: 'classify' }

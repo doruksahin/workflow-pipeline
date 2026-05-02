@@ -1,4 +1,4 @@
-# step-pipeline
+# workflow-pipeline
 
 Type-safe pipeline framework for composing LLM + script steps into reproducible workflows with fixture persistence, retry, and failure recovery.
 
@@ -13,7 +13,7 @@ pnpm test                           # vitest run
 pnpm test:watch                     # vitest watch mode
 ```
 
-**Package**: `step-pipeline` v0.1.0 (ESM, Node >= 22)
+**Package**: `workflow-pipeline` v0.1.0 (ESM, Node >= 22)
 
 **Exports**:
 
@@ -26,7 +26,7 @@ pnpm test:watch                     # vitest watch mode
 ## Structure
 
 ```
-step-pipeline/
+workflow-pipeline/
 ├── package.json              # ESM package, Node >= 22, exports: . + callers
 ├── tsconfig.json             # ES2022, Node16 resolution, strict, declarations to dist/
 ├── vitest.config.ts          # Test discovery: src/__tests__/**/*.test.ts
