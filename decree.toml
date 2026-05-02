@@ -1,0 +1,69 @@
+# Decree — software decision lifecycle
+# Docs: https://github.com/doruk/decree
+
+[types.adr]
+dir = "decree/adr"
+prefix = "ADR"
+digits = 4
+initial_status = "proposed"
+statuses = ["proposed", "accepted", "rejected", "deprecated", "superseded"]
+warn_on_reference = ["rejected", "deprecated", "superseded"]
+required_sections = ["Context and Problem Statement", "Considered Options", "Decision Outcome"]
+
+[types.adr.transitions]
+proposed = ["accepted", "rejected"]
+accepted = ["deprecated", "superseded"]
+rejected = []
+deprecated = []
+superseded = []
+
+[types.adr.actions]
+accept = "accepted"
+reject = "rejected"
+deprecate = "deprecated"
+supersede = "superseded"
+
+[types.adr.status_field_requirements]
+superseded = ["superseded-by"]
+
+[types.prd]
+dir = "decree/prd"
+prefix = "PRD"
+digits = 3
+initial_status = "draft"
+statuses = ["draft", "review", "approved", "implemented", "archived"]
+warn_on_reference = ["archived"]
+required_sections = ["Problem Statement", "Requirements", "Success Criteria"]
+
+[types.prd.transitions]
+draft = ["review"]
+review = ["approved", "draft"]
+approved = ["implemented", "archived"]
+implemented = ["archived"]
+archived = []
+
+[types.prd.actions]
+submit = "review"
+approve = "approved"
+implement = "implemented"
+archive = "archived"
+
+[types.spec]
+dir = "decree/spec"
+prefix = "SPEC"
+digits = 3
+initial_status = "draft"
+statuses = ["draft", "review", "approved", "implemented"]
+warn_on_reference = []
+required_sections = ["Overview", "Technical Design", "Testing Strategy"]
+
+[types.spec.transitions]
+draft = ["review"]
+review = ["approved", "draft"]
+approved = ["implemented"]
+implemented = []
+
+[types.spec.actions]
+submit = "review"
+approve = "approved"
+implement = "implemented"
