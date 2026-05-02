@@ -4,5 +4,8 @@
 
 | SPEC | Title | Status | Date |
 |-----|-----|-----|-----|
+| SPEC-001 | SPEC-001 Swap Retry Loop to p-retry | approved | 2026-05-02 |
+| SPEC-002 | SPEC-002 Swap Subprocess Spawn to execa | approved | 2026-05-02 |
+| SPEC-003 | SPEC-003 Swap NDJSON Line Buffer to split2 | approved | 2026-05-02 |
 
 <!-- GENERATED:decree-graph — do not edit below this line -->
