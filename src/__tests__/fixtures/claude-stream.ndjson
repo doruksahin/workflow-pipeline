@@ -1,0 +1,8 @@
+{"type":"assistant","message":{"content":[{"type":"text","text":"I'll help you with that. Let me check the current directory first."}],"usage":{"input_tokens":42,"output_tokens":18}}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"tu-001","name":"bash","input":{"command":"ls -la"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tu-001","content":"total 48\ndrwxr-xr-x 8 user group 256 May 2 12:00 .\ndrwxr-xr-x 3 user group 96 May 2 11:00 ..\n-rw-r--r-- 1 user group 1234 May 2 12:00 package.json\n"}]}}
+{"type":"assistant","message":{"content":[{"type":"text","text":"The directory contains a package.json. Let me read its contents."}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"tu-002","name":"read_file","input":{"path":"package.json"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tu-002","content":"{\"name\":\"workflow-pipeline\",\"version\":\"0.1.0\"}"}]}}
+{"type":"assistant","message":{"content":[{"type":"text","text":"The package is workflow-pipeline at version 0.1.0."}]}}
+{"type":"result","result":"The package is workflow-pipeline at version 0.1.0.","session_id":"sess-stream-fixture-001","message":{"usage":{"input_tokens":120,"output_tokens":35}}}
