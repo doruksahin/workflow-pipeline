@@ -12,6 +12,8 @@
  */
 import { spawn } from 'node:child_process'
 
+import split2 from 'split2'
+
 import { DEFAULT_CALLER_MAX_BUFFER, DEFAULT_CALLER_TIMEOUT_MS } from '../constants.js'
 import type { LlmCallerResult, PipelineLogger } from '../types.js'
 import { SILENT_LOGGER } from '../types.js'
@@ -90,7 +92,6 @@ function callClaudeStream(
       stdio: ['pipe', 'pipe', 'pipe'],
     })
 
-    let buffer = ''
     let totalSize = 0
     const stderrChunks: Buffer[] = []
     const toolCalls: ToolCallTrace[] = []
@@ -98,6 +99,7 @@ function callClaudeStream(
     let finalText = ''
     let tokenUsage: { input: number; output: number } = { input: 0, output: 0 }
 
+    // Track raw byte count for maxBuffer enforcement before handing off to split2.
     child.stdout.on('data', (chunk: Buffer) => {
       totalSize += chunk.length
       if (totalSize > maxBuffer) {
@@ -106,35 +108,26 @@ function callClaudeStream(
           settled = true
           reject(new Error(`claude stream-json output exceeded ${maxBuffer} bytes (${label})`))
         }
-        return
       }
+    })
 
-      buffer += chunk.toString('utf8')
+    // Pipe stdout through split2(JSON.parse) to handle NDJSON line-buffering.
+    const lines = child.stdout.pipe(split2(JSON.parse))
 
-      // Process complete lines
-      let newlineIdx: number
-      while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-        const line = buffer.slice(0, newlineIdx).trim()
-        buffer = buffer.slice(newlineIdx + 1)
+    lines.on('data', (msg: StreamMessage) => {
+      processMessage(msg, toolCalls, pendingTools, onToolStart, onToolCall, (text) => {
+        finalText = text
+      }, (usage) => {
+        tokenUsage = usage
+      })
+    })
 
-        if (!line) continue
-
-        // Separate JSON.parse from processMessage — malformed JSON is skipped,
-        // but processMessage errors propagate
-        let msg: StreamMessage
-        try {
-          msg = JSON.parse(line) as StreamMessage
-        } catch {
-          // Malformed JSON line — skip (expected in NDJSON streams)
-          continue
-        }
-
-        processMessage(msg, toolCalls, pendingTools, onToolStart, onToolCall, (text) => {
-          finalText = text
-        }, (usage) => {
-          tokenUsage = usage
-        })
-      }
+    lines.on('error', (err: Error) => {
+      // split2 emits an error when JSON.parse throws (malformed NDJSON line).
+      // The stream continues after the error — observable as a skipped line.
+      // We intentionally do not reject the promise here; the caller will
+      // still resolve when the process exits cleanly.
+      logger.info('claude stream-json parse error', { label, error: err.message })
     })
 
     child.stderr.on('data', (chunk: Buffer) => {
