@@ -100,32 +100,32 @@ After all three commits land, run the consumer regression check: in `jira-task-t
 
 ### Commit 1 — Bedrock
 
-- [ ] `src/__tests__/factory.retry.characterization.test.ts` exists with the seven tests listed above
-- [ ] All seven tests pass against the current (bespoke) implementation
-- [ ] No production code changed
-- [ ] Commit message: `feat: characterization tests for retry loop`
-- [ ] `pnpm build && pnpm test` green
+- [x] `src/__tests__/factory.retry.characterization.test.ts` exists with the seven tests listed above
+- [x] All seven tests pass against the current (bespoke) implementation
+- [x] No production code changed
+- [x] Commit message: `feat: characterization tests for retry loop`
+- [x] `pnpm build && pnpm test` green
 
 ### Commit 2 — Swap
 
-- [ ] `p-retry` added to dependencies in `package.json`
-- [ ] `pnpm-lock.yaml` regenerated
-- [ ] Bespoke retry loop in `src/factory.ts` deleted
-- [ ] Replaced with `pRetry()` call as designed above
-- [ ] All bedrock tests still pass (or relaxed band assertions documented in commit message)
-- [ ] Commit message: `refactor: swap retry loop → p-retry`
-- [ ] `pnpm build && pnpm test` green
+- [x] `p-retry` added to dependencies in `package.json`
+- [x] `pnpm-lock.yaml` regenerated
+- [x] Bespoke retry loop in `src/factory.ts` deleted
+- [x] Replaced with `pRetry()` call as designed above
+- [x] All bedrock tests still pass (or relaxed band assertions documented in commit message)
+- [x] Commit message: `refactor: swap retry loop → p-retry`
+- [x] `pnpm build && pnpm test` green
 
 ### Commit 3 — Lock-in
 
-- [ ] `fast-check` added to devDependencies
-- [ ] `src/__tests__/factory.retry.lockin.test.ts` exists with at least one property test and one snapshot test
-- [ ] Commit message: `test: lock-in — property + snapshot tests for retry`
-- [ ] `pnpm build && pnpm test` green
+- [x] `fast-check` added to devDependencies
+- [x] `src/__tests__/factory.retry.lockin.test.ts` exists with at least one property test and one snapshot test
+- [x] Commit message: `test: lock-in — property + snapshot tests for retry`
+- [x] `pnpm build && pnpm test` green
 
 ### Verification
 
-- [ ] Lines removed from `src/factory.ts`: ≥ 40 (target ~50)
-- [ ] No public-API change — `git diff src/types.ts src/index.ts` is empty (or only adds new exports)
+- [x] Lines removed from `src/factory.ts`: ≥ 40 (target ~50)
+- [x] No public-API change — `git diff src/types.ts src/index.ts` is empty (or only adds new exports)
 - [ ] Consumer regression: in `jira-task-to-md`, baseline-vs-post-swap run produces zero meaningful diff
 - [ ] `decree status SPEC-001 implement` once all boxes checked
