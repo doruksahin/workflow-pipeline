@@ -92,33 +92,33 @@ The property test for chunking is the most valuable test in the entire wheel-aud
 
 ### Commit 1 — Bedrock
 
-- [ ] `src/__tests__/callers.stream.characterization.test.ts` exists with the seven tests listed
-- [ ] Synthetic stream construction helper available for tests
-- [ ] All seven tests pass against the current (bespoke) implementation
-- [ ] Commit message: `feat: characterization tests for NDJSON streaming`
-- [ ] `pnpm build && pnpm test` green
+- [x] `src/__tests__/callers.stream.characterization.test.ts` exists with the seven tests listed
+- [x] Synthetic stream construction helper available for tests
+- [x] All seven tests pass against the current (bespoke) implementation
+- [x] Commit message: `feat: characterization tests for NDJSON streaming`
+- [x] `pnpm build && pnpm test` green
 
 ### Commit 2 — Swap
 
-- [ ] `split2` added to dependencies in `package.json`
-- [ ] `pnpm-lock.yaml` regenerated
-- [ ] Bespoke buffer + line-split code in `src/callers/claude-stream.ts` deleted
-- [ ] Replaced with `stream.pipe(split2(JSON.parse))` as designed
-- [ ] All bedrock tests pass unchanged
-- [ ] Commit message: `refactor: swap NDJSON line buffer → split2`
-- [ ] `pnpm build && pnpm test` green
+- [x] `split2` added to dependencies in `package.json`
+- [x] `pnpm-lock.yaml` regenerated
+- [x] Bespoke buffer + line-split code in `src/callers/claude-stream.ts` deleted
+- [x] Replaced with `stream.pipe(split2(JSON.parse))` as designed
+- [x] All bedrock tests pass unchanged
+- [x] Commit message: `refactor: swap NDJSON line buffer → split2`
+- [x] `pnpm build && pnpm test` green
 
 ### Commit 3 — Lock-in
 
-- [ ] `src/__tests__/fixtures/claude-stream.ndjson` exists and is committed
-- [ ] `src/__tests__/callers.stream.lockin.test.ts` exists with property test + replay test
-- [ ] Property test verifies arbitrary-chunking equivalence (this is the headline test)
-- [ ] Commit message: `test: lock-in — property + replay tests for NDJSON streaming`
-- [ ] `pnpm build && pnpm test` green
+- [x] `src/__tests__/fixtures/claude-stream.ndjson` exists and is committed
+- [x] `src/__tests__/callers.stream.lockin.test.ts` exists with property test + replay test
+- [x] Property test verifies arbitrary-chunking equivalence (this is the headline test)
+- [x] Commit message: `test: lock-in — property + replay tests for NDJSON streaming`
+- [x] `pnpm build && pnpm test` green
 
 ### Verification
 
-- [ ] Lines removed from `src/callers/claude-stream.ts`: ≥ 25 (target ~30)
-- [ ] No public-API change in `src/callers/index.ts`
+- [x] Lines removed from `src/callers/claude-stream.ts`: ≥ 25 (target ~30)
+- [x] No public-API change in `src/callers/index.ts`
 - [ ] Consumer regression: streaming-caller workflows in `jira-task-to-md` produce same outputs
 - [ ] `decree status SPEC-003 implement` once all boxes checked
